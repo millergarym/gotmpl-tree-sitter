@@ -80,6 +80,16 @@
           "type": "boolean",
           "default": true,
           "description": "Render the coloured keywords in bold."
+        },
+        "gotmplRainbow.border": {
+          "type": "boolean",
+          "default": true,
+          "description": "Draw a rounded outline around each rainbow keyword, in its depth colour."
+        },
+        "gotmplRainbow.background": {
+          "type": "boolean",
+          "default": true,
+          "description": "Fill each rainbow keyword with a faint background tint of its depth colour."
         }
       }
     },

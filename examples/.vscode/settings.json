@@ -1,4 +1,7 @@
 {
+    // "gotmplRainbow.border": false,
+    // "gotmplRainbow.background": false,
+    // "gotmplRainbow.bold": false,
     // "gotmplRainbow.semanticHighlighting": false
     // "editor.semanticHighlighting.enabled": false,
     // "editor.semanticTokenColorCustomizations": {

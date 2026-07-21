@@ -127,18 +127,42 @@ async function load() {
   // Rebuild the decoration palette. Each decoration carries both a light- and a
   // dark-theme colour so VSCode picks the readable one for the active theme (no
   // theme detection needed). The dark palette (`colors`) drives the count and is
-  // the fallback for light when `colorsLight` is unset.
+  // the fallback for light when `colorsLight` is unset. Optional per-depth
+  // border and background tint reuse the same depth colour.
   for (const dt of decorationTypes) dt.dispose();
   const dark = cfg.get('colors') || [];
   const lightCfg = cfg.get('colorsLight') || [];
   const light = lightCfg.length ? lightCfg : dark;
   const bold = cfg.get('bold');
-  decorationTypes = dark.map((darkColor, i) =>
-    vscode.window.createTextEditorDecorationType({
-      light: { color: light[i % light.length] },
+  const border = cfg.get('border');
+  const background = cfg.get('background');
+  decorationTypes = dark.map((darkColor, i) => {
+    const lightColor = light[i % light.length];
+    /** @type {vscode.DecorationRenderOptions} */
+    const opts = {
+      light: { color: lightColor },
       dark: { color: darkColor },
       fontWeight: bold ? 'bold' : undefined,
-    }));
+    };
+    if (border) {
+      opts.borderWidth = '1px';
+      opts.borderStyle = 'solid';
+      opts.borderRadius = '3px';
+      opts.light.borderColor = lightColor;
+      opts.dark.borderColor = darkColor;
+    }
+    if (background) {
+      opts.light.backgroundColor = withAlpha(lightColor, '22');
+      opts.dark.backgroundColor = withAlpha(darkColor, '22');
+    }
+    return vscode.window.createTextEditorDecorationType(opts);
+  });
+}
+
+// Append an 8-digit-hex alpha to a `#rrggbb` colour for a translucent tint.
+// Non-hex colours (named/rgb()) are returned unchanged.
+function withAlpha(color, alphaHex) {
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color + alphaHex : color;
 }
 
 /** @param {vscode.TextEditor | undefined} editor */

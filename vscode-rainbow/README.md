@@ -73,10 +73,12 @@ installing a built `.vsix` without the Marketplace is covered in
 | `gotmplRainbow.colors` | 7-colour palette | Rainbow palette for **dark** themes (and the light fallback); depth wraps around. |
 | `gotmplRainbow.colorsLight` | 7-colour palette | Rainbow palette for **light** themes (darker, so e.g. yellow stays readable). Empty = reuse `colors`. |
 | `gotmplRainbow.bold` | `true` | Render coloured keywords in bold. |
+| `gotmplRainbow.border` | `true` | Draw a rounded per-depth outline around each keyword. |
+| `gotmplRainbow.background` | `true` | Fill each keyword with a faint per-depth background tint. |
 
-Each rainbow decoration carries both a light and a dark colour, so VSCode picks
-the readable one for the active theme automatically — switching themes needs no
-reload.
+Each rainbow decoration carries both a light and a dark colour (text, border and
+background tint), so VSCode picks the readable one for the active theme
+automatically — switching themes needs no reload.
 
 Syntax-highlighting colours come from your active theme's **semantic token**
 rules, not from a setting here. The extension also turns on
