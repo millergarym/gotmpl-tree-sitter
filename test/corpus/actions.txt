@@ -1,0 +1,207 @@
+================================================================================
+Text and a simple field action
+================================================================================
+
+Hello {{ .Name }}!
+
+--------------------------------------------------------------------------------
+
+(template
+  (text)
+  (action
+    (ldelim)
+    (pipeline
+      (command
+        (field)))
+    (rdelim))
+  (text))
+
+================================================================================
+Comment with trim markers
+================================================================================
+
+{{- /* a comment */ -}}
+
+--------------------------------------------------------------------------------
+
+(template
+  (comment)
+  (text))
+
+================================================================================
+Pipe chain with a builtin and a string argument
+================================================================================
+
+{{ .Name | printf "%q" | html }}
+
+--------------------------------------------------------------------------------
+
+(template
+  (action
+    (ldelim)
+    (pipeline
+      (command
+        (field))
+      (command
+        (identifier)
+        (string))
+      (command
+        (identifier)))
+    (rdelim))
+  (text))
+
+================================================================================
+Variable declaration
+================================================================================
+
+{{ $x := add 1 2 }}
+
+--------------------------------------------------------------------------------
+
+(template
+  (action
+    (ldelim)
+    (pipeline
+      (variable)
+      (command
+        (identifier)
+        (number)
+        (number)))
+    (rdelim))
+  (text))
+
+================================================================================
+if / else if / else / end
+================================================================================
+
+{{if eq .A 1}}one{{else if .B}}b{{else}}other{{end}}
+
+--------------------------------------------------------------------------------
+
+(template
+  (if_statement
+    (ldelim)
+    (pipeline
+      (command
+        (identifier)
+        (field)
+        (number)))
+    (rdelim)
+    (text)
+    (ldelim)
+    (pipeline
+      (command
+        (field)))
+    (rdelim)
+    (text)
+    (ldelim)
+    (rdelim)
+    (text)
+    (ldelim)
+    (rdelim))
+  (text))
+
+================================================================================
+range with two-variable declaration and else
+================================================================================
+
+{{range $i, $v := .Items}}{{$v}}{{else}}empty{{end}}
+
+--------------------------------------------------------------------------------
+
+(template
+  (range_statement
+    (ldelim)
+    (pipeline
+      (variable)
+      (variable)
+      (command
+        (field)))
+    (rdelim)
+    (action
+      (ldelim)
+      (pipeline
+        (command
+          (variable)))
+      (rdelim))
+    (ldelim)
+    (rdelim)
+    (text)
+    (ldelim)
+    (rdelim))
+  (text))
+
+================================================================================
+define, block and template
+================================================================================
+
+{{define "T"}}{{block "B" .}}hi{{end}}{{end}}{{template "T" .}}
+
+--------------------------------------------------------------------------------
+
+(template
+  (define_statement
+    (ldelim)
+    name: (string)
+    (rdelim)
+    (block_statement
+      (ldelim)
+      name: (string)
+      (pipeline
+        (command
+          (dot)))
+      (rdelim)
+      (text)
+      (ldelim)
+      (rdelim))
+    (ldelim)
+    (rdelim))
+  (template_action
+    (ldelim)
+    name: (string)
+    (pipeline
+      (command
+        (dot)))
+    (rdelim))
+  (text))
+
+================================================================================
+if / else if / range / end / else / end
+================================================================================
+
+{{if eq .A 1}}one{{else if .B}}{{range .C}}{{.}}{{end}}{{end}}
+
+--------------------------------------------------------------------------------
+
+(template
+  (if_statement
+    (ldelim)
+    (pipeline
+      (command
+        (identifier)
+        (field)
+        (number)))
+    (rdelim)
+    (text)
+    (ldelim)
+    (pipeline
+      (command
+        (field)))
+    (rdelim)
+    (range_statement
+      (ldelim)
+      (pipeline
+        (command
+          (field)))
+      (rdelim)
+      (action
+        (ldelim)
+        (pipeline
+          (command
+            (dot)))
+        (rdelim))
+      (ldelim)
+      (rdelim))
+    (ldelim)
+    (rdelim))
+  (text))

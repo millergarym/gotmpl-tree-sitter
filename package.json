@@ -1,0 +1,25 @@
+{
+  "name": "tree-sitter-gotmpl",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for the Go template language (text/template & html/template)",
+  "license": "MIT",
+  "author": "Gary Miller <garym@nettex.com.au>",
+  "keywords": [
+    "tree-sitter",
+    "parser",
+    "go",
+    "golang",
+    "template",
+    "text/template",
+    "html/template"
+  ],
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "parse": "tree-sitter parse",
+    "highlight": "tree-sitter highlight",
+    "test": "tree-sitter test"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.25.0"
+  }
+}

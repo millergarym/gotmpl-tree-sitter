@@ -1,0 +1,34 @@
+{{/* A tour of the Go template language. */}}
+{{- define "greeting" -}}
+  Hello, {{ .Name | printf "%q" }}!
+{{- end}}
+
+{{define "report"}}
+{{- $threshold := 42 -}}
+<h1>{{ .Title }}</h1>
+<ul>
+{{- range $i, $item := .Items }}
+  {{- if gt $item.Score $threshold }}
+  <li class="hot">{{ $i }}: {{ $item.Name }} ({{ $item.Score }})</li>
+  {{- else if eq $item.Score 0 }}
+  <li class="zero">{{ $item.Name }}</li>
+  {{- else }}
+  <li>{{ $item.Name }}</li>
+  {{- end }}
+{{- else }}
+  <li>no items</li>
+{{- end }}
+</ul>
+
+{{ with .Footer }}
+  <footer>{{ . }}</footer>
+{{- end }}
+
+{{ block "sidebar" . }}
+  <aside>default sidebar for {{ .Title }}</aside>
+{{ end }}
+
+{{ template "greeting" . }}
+{{- end }}
+
+Raw values: {{ true }} {{ false }} {{ nil }} {{ 0x1F }} {{ 3.14 }} {{ `raw` }} {{ 'x' }}

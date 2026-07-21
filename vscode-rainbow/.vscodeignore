@@ -1,0 +1,16 @@
+# Files excluded from the packaged .vsix.
+# Everything the running extension needs (extension.js, rainbow-core.js,
+# resolve-assets.js, dist/, and the web-tree-sitter runtime dependency under
+# node_modules) is kept; dev-only tooling and sources are dropped.
+
+.vscode/**
+.gitignore
+Makefile
+build.js
+verify.js
+*.vsix
+
+# vsce already excludes devDependencies, but be explicit about the ones that
+# would otherwise be large or irrelevant.
+node_modules/@vscode/**
+node_modules/.bin/**

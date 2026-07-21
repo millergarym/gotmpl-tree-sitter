@@ -1,0 +1,15 @@
+# Node
+node_modules/
+package-lock.json
+
+# tree-sitter build artifacts
+build/
+*.wasm
+*.o
+*.a
+*.so
+*.dylib
+
+# tree-sitter local state
+.tree-sitter/
+.direnv
