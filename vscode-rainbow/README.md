@@ -105,9 +105,7 @@ The `code` CLI equivalent of the `.vscode/launch.json` config is
 `--extensionDevelopmentPath`:
 
 ```sh
-code --extensionDevelopmentPath=/Users/garymiller/devel/golang/gotmpl-tree-sitter/vscode-rainbow \
-     --disable-extensions \
-     /Users/garymiller/devel/golang/gotmpl-tree-sitter/examples/sample.tmpl
+code --extensionDevelopmentPath=`pwd` --disable-extensions `pwd`/../examples
 ```
 
 - `--extensionDevelopmentPath=…` loads the extension from source (same as the
