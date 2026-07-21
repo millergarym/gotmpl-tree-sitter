@@ -11,7 +11,8 @@ const path = require('path');
 const fs = require('fs');
 const { Parser, Language, Query } = require('web-tree-sitter');
 const { bucketize } = require('./rainbow-core');
-const { wasmPath: resolveWasm, queryPath: resolveQuery } = require('./resolve-assets');
+const { resolveTokens } = require('./highlight-core');
+const { wasmPath: resolveWasm, queryPath: resolveQuery, highlightsPath: resolveHighlights } = require('./resolve-assets');
 
 const PALETTE = ['#e6194B', '#f58231', '#ffe119', '#3cb44b', '#4363d8', '#911eb4', '#f032e6'];
 
@@ -19,6 +20,7 @@ async function main() {
   const grammarDir = path.resolve(__dirname, '..');
   const wasmPath = resolveWasm(__dirname, '');
   const scmPath = resolveQuery(__dirname, '');
+  const hlPath = resolveHighlights(__dirname, '');
   const file = process.argv[2] || path.join(grammarDir, 'examples', 'sample.tmpl');
 
   await Parser.init({
@@ -49,6 +51,21 @@ async function main() {
     console.log(
       `${loc}  ${String(r.depth).padStart(5)}  ${String(r.colorIdx).padStart(6)}  ` +
       `${PALETTE[r.colorIdx].padEnd(8)}  ${r.text}`);
+  }
+
+  // Highlights layer: resolve highlights.scm into the semantic token each node
+  // would receive (the same mapping extension.js hands to VSCode).
+  const hlQuery = new Query(lang, fs.readFileSync(hlPath, 'utf8'));
+  const tokens = resolveTokens(hlQuery.matches(tree.rootNode));
+  console.log(`\nsemantic tokens: ${tokens.length}\n`);
+  console.log('line:col   token          modifiers      text');
+  console.log('-------------------------------------------------');
+  for (const t of tokens) {
+    const loc = `${t.startRow + 1}:${t.startColumn}`.padEnd(9);
+    const text = t.text.length > 24 ? t.text.slice(0, 21) + '…' : t.text;
+    console.log(
+      `${loc}  ${t.type.padEnd(13)}  ${(t.modifiers.join(',') || '-').padEnd(13)}  ` +
+      `${JSON.stringify(text)}`);
   }
 }
 

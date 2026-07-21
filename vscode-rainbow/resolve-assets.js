@@ -32,4 +32,8 @@ function queryPath(extensionDir, override) {
   return resolveAsset(extensionDir, override || '', 'dist/rainbow.scm', '../queries/rainbow.scm');
 }
 
-module.exports = { resolveAsset, wasmPath, queryPath };
+function highlightsPath(extensionDir, override) {
+  return resolveAsset(extensionDir, override || '', 'dist/highlights.scm', '../queries/highlights.scm');
+}
+
+module.exports = { resolveAsset, wasmPath, queryPath, highlightsPath };

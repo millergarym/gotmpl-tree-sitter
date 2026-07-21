@@ -5,14 +5,56 @@ const path = require('path');
 const fs = require('fs');
 const { Parser, Language, Query } = require('web-tree-sitter');
 const { bucketize } = require('./rainbow-core');
-const { wasmPath: resolveWasm, queryPath: resolveQuery } = require('./resolve-assets');
+const { resolveTokens, TOKEN_TYPES, TOKEN_MODIFIERS } = require('./highlight-core');
+const { wasmPath: resolveWasm, queryPath: resolveQuery, highlightsPath: resolveHighlights } = require('./resolve-assets');
 
 let parser;
 let query;
+let hlQuery;
+// Whether the highlights.scm semantic-token layer is active (gotmplRainbow.semanticHighlighting).
+let semanticEnabled = true;
 /** @type {vscode.TextEditorDecorationType[]} */
 let decorationTypes = [];
 /** @type {vscode.ExtensionContext} */
 let ctx;
+
+// VSCode semantic-token legend for the highlights.scm layer. Fixed at module
+// load; the theme decides the actual colours.
+const semanticLegend = new vscode.SemanticTokensLegend(TOKEN_TYPES, TOKEN_MODIFIERS);
+const semanticTokensChanged = new vscode.EventEmitter();
+
+/** @type {vscode.DocumentSemanticTokensProvider} */
+const semanticProvider = {
+  onDidChangeSemanticTokens: semanticTokensChanged.event,
+  provideDocumentSemanticTokens(document) {
+    if (!semanticEnabled || !parser || !hlQuery) return null;
+    const tree = parser.parse(document.getText());
+    try {
+      const builder = new vscode.SemanticTokensBuilder(semanticLegend);
+      for (const t of resolveTokens(hlQuery.matches(tree.rootNode))) {
+        pushToken(builder, document, t);
+      }
+      return builder.build();
+    } finally {
+      tree.delete();
+    }
+  },
+};
+
+// Push one resolved node as semantic tokens. VSCode tokens cannot span lines,
+// so a multi-line node (e.g. a block comment) is split into one token per line.
+function pushToken(builder, document, t) {
+  if (t.startRow === t.endRow) {
+    builder.push(new vscode.Range(t.startRow, t.startColumn, t.endRow, t.endColumn), t.type, t.modifiers);
+    return;
+  }
+  const eol = (row) => document.lineAt(row).text.length;
+  builder.push(new vscode.Range(t.startRow, t.startColumn, t.startRow, eol(t.startRow)), t.type, t.modifiers);
+  for (let row = t.startRow + 1; row < t.endRow; row++) {
+    builder.push(new vscode.Range(row, 0, row, eol(row)), t.type, t.modifiers);
+  }
+  builder.push(new vscode.Range(t.endRow, 0, t.endRow, t.endColumn), t.type, t.modifiers);
+}
 
 async function activate(context) {
   ctx = context;
@@ -21,6 +63,9 @@ async function activate(context) {
   const refreshActive = () => refresh(vscode.window.activeTextEditor);
 
   context.subscriptions.push(
+    semanticTokensChanged,
+    vscode.languages.registerDocumentSemanticTokensProvider(
+      { language: 'gotmpl' }, semanticProvider, semanticLegend),
     vscode.commands.registerCommand('gotmplRainbow.reload', async () => {
       await load();
       refreshActive();
@@ -52,12 +97,15 @@ async function load() {
   // resolve-assets.js.
   const wasmPath = resolveWasm(ctx.extensionPath, cfg.get('parserPath'));
   const scmPath = resolveQuery(ctx.extensionPath, cfg.get('rainbowQueryPath'));
+  const hlPath = resolveHighlights(ctx.extensionPath, cfg.get('highlightsQueryPath'));
+  semanticEnabled = cfg.get('semanticHighlighting') !== false;
 
-  for (const [label, p] of [['parser', wasmPath], ['rainbow query', scmPath]]) {
+  for (const [label, p] of [['parser', wasmPath], ['rainbow query', scmPath], ['highlights query', hlPath]]) {
     if (!fs.existsSync(p)) {
       vscode.window.showErrorMessage(
         `Go template rainbow: ${label} not found at ${p}. ` +
-        `Run "make bundle" to package the assets, or set gotmplRainbow.parserPath / gotmplRainbow.rainbowQueryPath.`);
+        `Run "make bundle" to package the assets, or set gotmplRainbow.parserPath / ` +
+        `gotmplRainbow.rainbowQueryPath / gotmplRainbow.highlightsQueryPath.`);
       return;
     }
   }
@@ -70,6 +118,11 @@ async function load() {
   parser = new Parser();
   parser.setLanguage(lang);
   query = new Query(lang, fs.readFileSync(scmPath, 'utf8'));
+  hlQuery = new Query(lang, fs.readFileSync(hlPath, 'utf8'));
+
+  // Tell VSCode the semantic tokens are stale so open gotmpl files re-highlight
+  // after a reload / config change.
+  semanticTokensChanged.fire();
 
   // Rebuild the decoration palette.
   for (const dt of decorationTypes) dt.dispose();

@@ -1,0 +1,14 @@
+{
+    // "gotmplRainbow.semanticHighlighting": false
+    // "editor.semanticHighlighting.enabled": false,
+    // "editor.semanticTokenColorCustomizations": {
+    //     "enabled": false,
+    //     "rules": {
+    //         "comment": "#6a9955",
+    //         "string": "#ce9178",
+    //         "keyword": "#c586c0",
+    //         "function": "#dcdcaa",
+    //         "number": "#b5cea8"
+    //     }
+    // }
+}

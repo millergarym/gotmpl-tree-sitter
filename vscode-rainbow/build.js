@@ -15,6 +15,7 @@ const dist = path.join(extDir, 'dist');
 const assets = [
   [path.join(grammarDir, 'tree-sitter-gotmpl.wasm'), path.join(dist, 'tree-sitter-gotmpl.wasm')],
   [path.join(grammarDir, 'queries', 'rainbow.scm'), path.join(dist, 'rainbow.scm')],
+  [path.join(grammarDir, 'queries', 'highlights.scm'), path.join(dist, 'highlights.scm')],
 ];
 
 fs.mkdirSync(dist, { recursive: true });

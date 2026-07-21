@@ -54,6 +54,16 @@
           "default": "",
           "description": "Absolute path to queries/rainbow.scm. Leave empty to use the query bundled with the extension."
         },
+        "gotmplRainbow.highlightsQueryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to queries/highlights.scm (drives theme-based syntax highlighting). Leave empty to use the query bundled with the extension."
+        },
+        "gotmplRainbow.semanticHighlighting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Provide tree-sitter-driven syntax highlighting (semantic tokens) from highlights.scm for gotmpl files. Colours come from the active theme. Turn off to keep only the rainbow keyword colouring."
+        },
         "gotmplRainbow.colors": {
           "type": "array",
           "items": { "type": "string" },
@@ -72,7 +82,12 @@
         "command": "gotmplRainbow.reload",
         "title": "Go template rainbow: Reload parser and query"
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "[gotmpl]": {
+        "editor.semanticHighlighting.enabled": true
+      }
+    }
   },
   "scripts": {
     "build": "node build.js",
