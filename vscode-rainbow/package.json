@@ -2,10 +2,11 @@
   "name": "gotmpl-rainbow",
   "displayName": "Go template rainbow",
   "description": "Depth-based rainbow colouring of Go template control keywords, driven by the tree-sitter grammar and queries/rainbow.scm.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "millergarym",
   "license": "MIT",
-  "author": "Gary Miller <garym@nettex.com.au>",
+  "author": "Gary Miller <gm@wx.io>",
+  "icon": "images/icon.png",
   "categories": [
     "Programming Languages"
   ],

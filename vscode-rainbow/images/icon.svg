@@ -1,0 +1,17 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Go template delimiters {{ }} in rainbow colours -->
+  <g font-family="'DejaVu Sans Mono','SF Mono','JetBrains Mono',monospace"
+     font-weight="700" font-size="120" text-anchor="middle" dominant-baseline="central">
+    <text x="56"  y="128" fill="#e6194B">{</text>
+    <text x="92"  y="128" fill="#f58231">{</text>
+    <text x="164" y="128" fill="#4363d8">}</text>
+    <text x="202" y="128" fill="#911eb4">}</text>
+  </g>
+
+  <!-- rainbow depth dots nestled between the braces, stacked vertically -->
+  <g>
+    <circle cx="128" cy="102"  r="10" fill="#ffe119"/>
+    <circle cx="128" cy="135" r="10" fill="#3cb44b"/>
+    <circle cx="128" cy="168" r="10" fill="#f032e6"/>
+  </g>
+</svg>

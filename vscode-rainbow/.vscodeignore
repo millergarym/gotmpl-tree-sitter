@@ -9,6 +9,7 @@ Makefile
 build.js
 verify.js
 *.vsix
+images/icon.svg
 
 # vsce already excludes devDependencies, but be explicit about the ones that
 # would otherwise be large or irrelevant.
