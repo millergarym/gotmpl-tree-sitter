@@ -8,7 +8,8 @@
     //         "string": "#ce9178",
     //         "keyword": "#c586c0",
     //         "function": "#dcdcaa",
-    //         "number": "#b5cea8"
+    //         "number": "#b5cea8",
+    //         "variable": "#d8a01e"
     //     }
     // }
 }

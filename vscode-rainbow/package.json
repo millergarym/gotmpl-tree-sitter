@@ -68,7 +68,13 @@
           "type": "array",
           "items": { "type": "string" },
           "default": ["#e6194B", "#f58231", "#ffe119", "#3cb44b", "#4363d8", "#911eb4", "#f032e6"],
-          "description": "Rainbow palette. Nesting depth wraps around the list."
+          "description": "Rainbow palette for dark themes (also the fallback for light themes when gotmplRainbow.colorsLight is empty). Nesting depth wraps around the list."
+        },
+        "gotmplRainbow.colorsLight": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["#c4122f", "#c8590c", "#a67c00", "#2f8f2f", "#2547c0", "#8515a8", "#c012bd"],
+          "description": "Rainbow palette for light themes — darker/more saturated so colours like yellow stay readable on a light background. Leave empty to reuse gotmplRainbow.colors. Nesting depth wraps around the list."
         },
         "gotmplRainbow.bold": {
           "type": "boolean",

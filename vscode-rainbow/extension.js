@@ -124,13 +124,19 @@ async function load() {
   // after a reload / config change.
   semanticTokensChanged.fire();
 
-  // Rebuild the decoration palette.
+  // Rebuild the decoration palette. Each decoration carries both a light- and a
+  // dark-theme colour so VSCode picks the readable one for the active theme (no
+  // theme detection needed). The dark palette (`colors`) drives the count and is
+  // the fallback for light when `colorsLight` is unset.
   for (const dt of decorationTypes) dt.dispose();
-  const colors = cfg.get('colors') || [];
+  const dark = cfg.get('colors') || [];
+  const lightCfg = cfg.get('colorsLight') || [];
+  const light = lightCfg.length ? lightCfg : dark;
   const bold = cfg.get('bold');
-  decorationTypes = colors.map((color) =>
+  decorationTypes = dark.map((darkColor, i) =>
     vscode.window.createTextEditorDecorationType({
-      color,
+      light: { color: light[i % light.length] },
+      dark: { color: darkColor },
       fontWeight: bold ? 'bold' : undefined,
     }));
 }
