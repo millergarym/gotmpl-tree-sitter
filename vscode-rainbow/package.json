@@ -20,13 +20,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/millergarym/gotmpl.git",
+    "url": "https://github.com/millergarym/gotmpl-tree-sitter.git",
     "directory": "tree-sitter/vscode-rainbow"
   },
   "bugs": {
-    "url": "https://github.com/millergarym/gotmpl/issues"
+    "url": "https://github.com/millergarym/gotmpl-tree-sitter/issues"
   },
-  "homepage": "https://github.com/millergarym/gotmpl/tree/main/tree-sitter/vscode-rainbow#readme",
+  "homepage": "https://github.com/millergarym/gotmpl-tree-sitter",
   "engines": {
     "vscode": "^1.75.0"
   },
