@@ -1,7 +1,7 @@
 # gotmpl-rainbow
 
 A VSCode extension for Go templates, driven by the tree-sitter grammar. It does
-two things every time a `gotmpl` document changes:
+three things every time a `gotmpl` document changes:
 
 1. **Syntax highlighting** — runs [`../queries/highlights.scm`](../queries/highlights.scm)
    and exposes the captures as VSCode **semantic tokens** (comments, strings,
@@ -11,6 +11,8 @@ two things every time a `gotmpl` document changes:
    and paints each control keyword (`define`/`range`/`if`/`with`/`block`/`else`/
    `end`) with a colour chosen by its **block nesting depth**, reproducing the
    Neovim `rainbow-delimiters.nvim` behaviour.
+3. **Code folding** — folds each control block at the same keyword markers, so
+   `{{if}}…{{else}}…{{end}}` folds into per-branch regions.
 
 VSCode has no built-in consumer for these `.scm` queries; this extension is the
 bridge. See [../docs/vscode.md](../docs/vscode.md) for the full write-up.
@@ -22,6 +24,7 @@ bridge. See [../docs/vscode.md](../docs/vscode.md) for the full write-up.
 | `extension.js` | VSCode glue: activation, parsing, semantic tokens, decorations, config/reload. |
 | `rainbow-core.js` | Pure depth/bucketing logic for the rainbow layer — no `vscode` dependency. |
 | `highlight-core.js` | Pure `highlights.scm` capture → semantic-token mapping — no `vscode` dependency. |
+| `folding-core.js` | Pure control-block → fold-range logic — no `vscode` dependency. |
 | `resolve-assets.js` | Locates the parser/queries: config override → bundled `dist/` → sibling grammar repo. |
 | `verify.js` | Headless check of both core layers (no VSCode needed). |
 | `build.js` | Copies the parser + `rainbow.scm` + `highlights.scm` into `dist/` for packaging. |
@@ -75,6 +78,7 @@ installing a built `.vsix` without the Marketplace is covered in
 | `gotmplRainbow.bold` | `true` | Render coloured keywords in bold. |
 | `gotmplRainbow.border` | `true` | Draw a rounded per-depth outline around each keyword. |
 | `gotmplRainbow.background` | `true` | Fill each keyword with a faint per-depth background tint. |
+| `gotmplRainbow.folding` | `true` | Fold control blocks at the rainbow keyword markers. |
 
 Each rainbow decoration carries both a light and a dark colour (text, border and
 background tint), so VSCode picks the readable one for the active theme
@@ -174,4 +178,20 @@ usual causes:
   `"editor.semanticHighlighting.enabled": true`, and relaunch the host so the
   `configurationDefaults` load. Check **Help → Toggle Developer Tools → Console**
   for any error thrown from `provideDocumentSemanticTokens`.
+
+## Folding
+
+A `FoldingRangeProvider` folds control blocks using the **same keyword markers**
+the rainbow layer colours (`if`/`else`/`end`/`range`/`with`/`block`/`define`). A
+fold is created for each segment *between consecutive markers* of a block, so:
+
+- `{{define}}…{{end}}` folds to a single region.
+- `{{range}}…{{else}}…{{end}}` folds into two regions (the loop body and the
+  empty-case body).
+- `{{if}}…{{else if}}…{{else}}…{{end}}` folds into one region per branch.
+
+Every `{{else}}` / `{{else if}}` and the closing `{{end}}` stay visible when a
+region is collapsed. Nested blocks fold independently — only a block's own
+keywords bound its folds. `node verify.js` prints the computed ranges, and the
+logic lives in the `vscode`-free `folding-core.js`.
 

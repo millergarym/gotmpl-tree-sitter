@@ -12,6 +12,7 @@ const fs = require('fs');
 const { Parser, Language, Query } = require('web-tree-sitter');
 const { bucketize } = require('./rainbow-core');
 const { resolveTokens } = require('./highlight-core');
+const { foldRanges } = require('./folding-core');
 const { wasmPath: resolveWasm, queryPath: resolveQuery, highlightsPath: resolveHighlights } = require('./resolve-assets');
 
 const PALETTE = ['#e6194B', '#f58231', '#ffe119', '#3cb44b', '#4363d8', '#911eb4', '#f032e6'];
@@ -66,6 +67,17 @@ async function main() {
     console.log(
       `${loc}  ${t.type.padEnd(13)}  ${(t.modifiers.join(',') || '-').padEnd(13)}  ` +
       `${JSON.stringify(text)}`);
+  }
+
+  // Folding layer: the control-block fold ranges (1-based lines for display).
+  const folds = foldRanges(tree.rootNode);
+  console.log(`\nfolding ranges: ${folds.length}\n`);
+  console.log('lines        header');
+  console.log('-------------------------------------------------');
+  const lines = src.split('\n');
+  for (const f of folds) {
+    const span = `${f.start + 1}-${f.end + 1}`.padEnd(11);
+    console.log(`${span}  ${lines[f.start].trim()}`);
   }
 }
 

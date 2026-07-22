@@ -91,6 +91,11 @@
           "type": "boolean",
           "default": true,
           "description": "Fill each rainbow keyword with a faint background tint of its depth colour."
+        },
+        "gotmplRainbow.folding": {
+          "type": "boolean",
+          "default": true,
+          "description": "Provide code folding for control blocks ({{if}}/{{range}}/{{with}}/{{block}}/{{define}} … {{end}}), split at {{else}} / {{else if}} — the same markers as the rainbow keywords."
         }
       }
     },

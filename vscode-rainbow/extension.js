@@ -6,6 +6,7 @@ const fs = require('fs');
 const { Parser, Language, Query } = require('web-tree-sitter');
 const { bucketize } = require('./rainbow-core');
 const { resolveTokens, TOKEN_TYPES, TOKEN_MODIFIERS } = require('./highlight-core');
+const { foldRanges } = require('./folding-core');
 const { wasmPath: resolveWasm, queryPath: resolveQuery, highlightsPath: resolveHighlights } = require('./resolve-assets');
 
 let parser;
@@ -13,6 +14,8 @@ let query;
 let hlQuery;
 // Whether the highlights.scm semantic-token layer is active (gotmplRainbow.semanticHighlighting).
 let semanticEnabled = true;
+// Whether control-block code folding is active (gotmplRainbow.folding).
+let foldingEnabled = true;
 /** @type {vscode.TextEditorDecorationType[]} */
 let decorationTypes = [];
 /** @type {vscode.ExtensionContext} */
@@ -35,6 +38,24 @@ const semanticProvider = {
         pushToken(builder, document, t);
       }
       return builder.build();
+    } finally {
+      tree.delete();
+    }
+  },
+};
+
+const foldingChanged = new vscode.EventEmitter();
+
+// Code folding for control blocks, using the same block markers the rainbow
+// layer colours (see folding-core.js).
+/** @type {vscode.FoldingRangeProvider} */
+const foldingProvider = {
+  onDidChangeFoldingRanges: foldingChanged.event,
+  provideFoldingRanges(document) {
+    if (!foldingEnabled || !parser) return [];
+    const tree = parser.parse(document.getText());
+    try {
+      return foldRanges(tree.rootNode).map((r) => new vscode.FoldingRange(r.start, r.end));
     } finally {
       tree.delete();
     }
@@ -64,8 +85,10 @@ async function activate(context) {
 
   context.subscriptions.push(
     semanticTokensChanged,
+    foldingChanged,
     vscode.languages.registerDocumentSemanticTokensProvider(
       { language: 'gotmpl' }, semanticProvider, semanticLegend),
+    vscode.languages.registerFoldingRangeProvider({ language: 'gotmpl' }, foldingProvider),
     vscode.commands.registerCommand('gotmplRainbow.reload', async () => {
       await load();
       refreshActive();
@@ -99,6 +122,7 @@ async function load() {
   const scmPath = resolveQuery(ctx.extensionPath, cfg.get('rainbowQueryPath'));
   const hlPath = resolveHighlights(ctx.extensionPath, cfg.get('highlightsQueryPath'));
   semanticEnabled = cfg.get('semanticHighlighting') !== false;
+  foldingEnabled = cfg.get('folding') !== false;
 
   for (const [label, p] of [['parser', wasmPath], ['rainbow query', scmPath], ['highlights query', hlPath]]) {
     if (!fs.existsSync(p)) {
@@ -120,9 +144,10 @@ async function load() {
   query = new Query(lang, fs.readFileSync(scmPath, 'utf8'));
   hlQuery = new Query(lang, fs.readFileSync(hlPath, 'utf8'));
 
-  // Tell VSCode the semantic tokens are stale so open gotmpl files re-highlight
-  // after a reload / config change.
+  // Tell VSCode the semantic tokens and folding ranges are stale so open gotmpl
+  // files re-highlight / re-fold after a reload / config change.
   semanticTokensChanged.fire();
+  foldingChanged.fire();
 
   // Rebuild the decoration palette. Each decoration carries both a light- and a
   // dark-theme colour so VSCode picks the readable one for the active theme (no
