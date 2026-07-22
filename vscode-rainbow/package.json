@@ -3,7 +3,7 @@
   "displayName": "Go template rainbow",
   "description": "Depth-based rainbow colouring of Go template control keywords, driven by the tree-sitter grammar and queries/rainbow.scm.",
   "version": "0.0.2",
-  "publisher": "millergarym",
+  "publisher": "gmwxio",
   "license": "MIT",
   "author": "Gary Miller <gm@wx.io>",
   "icon": "images/icon.png",
