@@ -14,6 +14,8 @@ three things every time a `gotmpl` document changes:
 3. **Code folding** — folds each control block at the same keyword markers, so
    `{{if}}…{{else}}…{{end}}` folds into per-branch regions.
 
+![Go template rainbow highlighting a gotmpl file in VSCode](images/screenshot.png)
+
 VSCode has no built-in consumer for these `.scm` queries; this extension is the
 bridge. See [../docs/vscode.md](../docs/vscode.md) for the full write-up.
 
