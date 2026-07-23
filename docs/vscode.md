@@ -145,6 +145,41 @@ query (e.g. capturing the `{{`/`}}` braces instead of, or in addition to, the
 keywords) and running **Go template rainbow: Reload** from the Command Palette
 is enough to change what gets rainbow-coloured — no code change needed.
 
+### Multi-root workspaces: semantic highlighting shows nothing
+
+The rainbow keyword colouring is painted with editor decorations, so it works
+everywhere. The `highlights.scm` **semantic-token** layer is different: VSCode
+only renders semantic tokens when `editor.semanticHighlighting.enabled` resolves
+to `true` for the file. The extension turns that on with a *language-scoped*
+default (`configurationDefaults` → `"[gotmpl]": { "editor.semanticHighlighting.enabled": true }`).
+
+In a multi-root workspace (a `.code-workspace` file with several folders), that
+`.code-workspace` — or a folder's / your user settings — usually carries a
+*non*-language-scoped `editor.semanticHighlighting.enabled` value (the built-in
+default is `"configuredByTheme"`), and a non-language setting **outranks** a
+language-scoped default (see VSCode
+[#101498](https://github.com/microsoft/vscode/issues/101498)). So the extension's
+default gets shadowed and the tokens stop rendering — even though the rainbow
+layer keeps working.
+
+Fix: enable it explicitly at the workspace level, keeping it **language-scoped**
+so it doesn't change other languages. In the `.code-workspace` file:
+
+```jsonc
+{
+  "folders": [ /* … */ ],
+  "settings": {
+    "[gotmpl]": { "editor.semanticHighlighting.enabled": true }
+  }
+}
+```
+
+(A bare `"editor.semanticHighlighting.enabled": true` there would force it on for
+every language — use the `"[gotmpl]"` form.) The per-folder
+`gotmplRainbow.*` settings (palette, `semanticHighlighting`, `folding`, …) are
+`resource`-scoped, so you can also override them per folder in each folder's
+`.vscode/settings.json`.
+
 ### How the depth colouring works
 
 `rainbow-core.js` computes a keyword's colour bucket from how deeply its block

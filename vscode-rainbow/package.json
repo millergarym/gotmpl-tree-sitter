@@ -2,7 +2,7 @@
   "name": "gotmpl-rainbow",
   "displayName": "Go template rainbow",
   "description": "Depth-based rainbow colouring of Go template control keywords, driven by the tree-sitter grammar and queries/rainbow.scm.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "gmwxio",
   "license": "MIT",
   "author": "Gary Miller <gm@wx.io>",
@@ -63,38 +63,45 @@
         "gotmplRainbow.semanticHighlighting": {
           "type": "boolean",
           "default": true,
+          "scope": "resource",
           "description": "Provide tree-sitter-driven syntax highlighting (semantic tokens) from highlights.scm for gotmpl files. Colours come from the active theme. Turn off to keep only the rainbow keyword colouring."
         },
         "gotmplRainbow.colors": {
           "type": "array",
           "items": { "type": "string" },
           "default": ["#e6194B", "#f58231", "#ffe119", "#3cb44b", "#4363d8", "#911eb4", "#f032e6"],
+          "scope": "resource",
           "description": "Rainbow palette for dark themes (also the fallback for light themes when gotmplRainbow.colorsLight is empty). Nesting depth wraps around the list."
         },
         "gotmplRainbow.colorsLight": {
           "type": "array",
           "items": { "type": "string" },
           "default": ["#c4122f", "#c8590c", "#a67c00", "#2f8f2f", "#2547c0", "#8515a8", "#c012bd"],
+          "scope": "resource",
           "description": "Rainbow palette for light themes — darker/more saturated so colours like yellow stay readable on a light background. Leave empty to reuse gotmplRainbow.colors. Nesting depth wraps around the list."
         },
         "gotmplRainbow.bold": {
           "type": "boolean",
           "default": true,
+          "scope": "resource",
           "description": "Render the coloured keywords in bold."
         },
         "gotmplRainbow.border": {
           "type": "boolean",
           "default": true,
+          "scope": "resource",
           "description": "Draw a rounded outline around each rainbow keyword, in its depth colour."
         },
         "gotmplRainbow.background": {
           "type": "boolean",
           "default": true,
+          "scope": "resource",
           "description": "Fill each rainbow keyword with a faint background tint of its depth colour."
         },
         "gotmplRainbow.folding": {
           "type": "boolean",
           "default": true,
+          "scope": "resource",
           "description": "Provide code folding for control blocks ({{if}}/{{range}}/{{with}}/{{block}}/{{define}} … {{end}}), split at {{else}} / {{else if}} — the same markers as the rainbow keywords."
         }
       }

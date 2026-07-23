@@ -12,12 +12,12 @@ const { wasmPath: resolveWasm, queryPath: resolveQuery, highlightsPath: resolveH
 let parser;
 let query;
 let hlQuery;
-// Whether the highlights.scm semantic-token layer is active (gotmplRainbow.semanticHighlighting).
-let semanticEnabled = true;
-// Whether control-block code folding is active (gotmplRainbow.folding).
-let foldingEnabled = true;
-/** @type {vscode.TextEditorDecorationType[]} */
-let decorationTypes = [];
+// Rainbow decoration palettes, keyed by a signature of the palette config. A
+// multi-root workspace can set gotmplRainbow.colors/bold/border/background per
+// folder, so decorations are resolved per-document (see paletteFor / refresh)
+// rather than once at load, and cached by signature to avoid rebuilding.
+/** @type {Map<string, vscode.TextEditorDecorationType[]>} */
+let decorationCache = new Map();
 /** @type {vscode.ExtensionContext} */
 let ctx;
 
@@ -30,7 +30,12 @@ const semanticTokensChanged = new vscode.EventEmitter();
 const semanticProvider = {
   onDidChangeSemanticTokens: semanticTokensChanged.event,
   provideDocumentSemanticTokens(document) {
-    if (!semanticEnabled || !parser || !hlQuery) return null;
+    if (!parser || !hlQuery) return null;
+    // Resolved per-document so a per-folder gotmplRainbow.semanticHighlighting
+    // toggle is honoured in multi-root workspaces.
+    if (vscode.workspace.getConfiguration('gotmplRainbow', document.uri).get('semanticHighlighting') === false) {
+      return null;
+    }
     const tree = parser.parse(document.getText());
     try {
       const builder = new vscode.SemanticTokensBuilder(semanticLegend);
@@ -52,7 +57,12 @@ const foldingChanged = new vscode.EventEmitter();
 const foldingProvider = {
   onDidChangeFoldingRanges: foldingChanged.event,
   provideFoldingRanges(document) {
-    if (!foldingEnabled || !parser) return [];
+    if (!parser) return [];
+    // Resolved per-document so a per-folder gotmplRainbow.folding toggle is
+    // honoured in multi-root workspaces.
+    if (vscode.workspace.getConfiguration('gotmplRainbow', document.uri).get('folding') === false) {
+      return [];
+    }
     const tree = parser.parse(document.getText());
     try {
       return foldRanges(tree.rootNode).map((r) => new vscode.FoldingRange(r.start, r.end));
@@ -81,7 +91,10 @@ async function activate(context) {
   ctx = context;
   await load();
 
-  const refreshActive = () => refresh(vscode.window.activeTextEditor);
+  // Reload disposes every cached palette, clearing decorations from all editors,
+  // so re-decorate every visible editor — a multi-root workspace can show gotmpl
+  // files from different folders (with different palettes) side by side.
+  const refreshVisible = () => vscode.window.visibleTextEditors.forEach(refresh);
 
   context.subscriptions.push(
     semanticTokensChanged,
@@ -91,7 +104,7 @@ async function activate(context) {
     vscode.languages.registerFoldingRangeProvider({ language: 'gotmpl' }, foldingProvider),
     vscode.commands.registerCommand('gotmplRainbow.reload', async () => {
       await load();
-      refreshActive();
+      refreshVisible();
       vscode.window.showInformationMessage('Go template rainbow: reloaded.');
     }),
     vscode.window.onDidChangeActiveTextEditor(refresh),
@@ -102,17 +115,20 @@ async function activate(context) {
     vscode.workspace.onDidChangeConfiguration(async (e) => {
       if (e.affectsConfiguration('gotmplRainbow')) {
         await load();
-        refreshActive();
+        refreshVisible();
       }
     }),
   );
 
-  refreshActive();
+  refreshVisible();
 }
 
-// (Re)load the parser, the rainbow query, and the decoration palette from the
-// current configuration.
+// (Re)load the parser and the rainbow/highlights queries from the current
+// configuration. The parser and queries are global assets (one instance for the
+// window); per-document rendering settings (palette, toggles) are resolved
+// later, per resource, in the providers and refresh().
 async function load() {
+  // Asset paths are window-scoped, so a resource-less read is correct here.
   const cfg = vscode.workspace.getConfiguration('gotmplRainbow');
 
   // Prefer the assets bundled into the .vsix (dist/); fall back to the sibling
@@ -121,8 +137,6 @@ async function load() {
   const wasmPath = resolveWasm(ctx.extensionPath, cfg.get('parserPath'));
   const scmPath = resolveQuery(ctx.extensionPath, cfg.get('rainbowQueryPath'));
   const hlPath = resolveHighlights(ctx.extensionPath, cfg.get('highlightsQueryPath'));
-  semanticEnabled = cfg.get('semanticHighlighting') !== false;
-  foldingEnabled = cfg.get('folding') !== false;
 
   for (const [label, p] of [['parser', wasmPath], ['rainbow query', scmPath], ['highlights query', hlPath]]) {
     if (!fs.existsSync(p)) {
@@ -144,24 +158,42 @@ async function load() {
   query = new Query(lang, fs.readFileSync(scmPath, 'utf8'));
   hlQuery = new Query(lang, fs.readFileSync(hlPath, 'utf8'));
 
+  // Palette settings may have changed; drop the cached decorations so refresh()
+  // rebuilds them (and clears the old ones from every editor).
+  disposeDecorations();
+
   // Tell VSCode the semantic tokens and folding ranges are stale so open gotmpl
   // files re-highlight / re-fold after a reload / config change.
   semanticTokensChanged.fire();
   foldingChanged.fire();
+}
 
-  // Rebuild the decoration palette. Each decoration carries both a light- and a
-  // dark-theme colour so VSCode picks the readable one for the active theme (no
-  // theme detection needed). The dark palette (`colors`) drives the count and is
-  // the fallback for light when `colorsLight` is unset. Optional per-depth
-  // border and background tint reuse the same depth colour.
-  for (const dt of decorationTypes) dt.dispose();
+// Resolve the rainbow decoration palette for a resource. In a multi-root
+// workspace the palette settings can differ per folder, so each distinct
+// palette gets its own set of decoration types, cached by a signature of the
+// settings that shape it. Each decoration carries both a light- and a dark-theme
+// colour so VSCode picks the readable one for the active theme (no theme
+// detection needed). The dark palette (`colors`) drives the count and is the
+// fallback for light when `colorsLight` is unset. Optional per-depth border and
+// background tint reuse the same depth colour.
+/**
+ * @param {vscode.Uri} resource
+ * @returns {vscode.TextEditorDecorationType[]}
+ */
+function paletteFor(resource) {
+  const cfg = vscode.workspace.getConfiguration('gotmplRainbow', resource);
   const dark = cfg.get('colors') || [];
   const lightCfg = cfg.get('colorsLight') || [];
   const light = lightCfg.length ? lightCfg : dark;
   const bold = cfg.get('bold');
   const border = cfg.get('border');
   const background = cfg.get('background');
-  decorationTypes = dark.map((darkColor, i) => {
+
+  const sig = JSON.stringify([dark, light, bold, border, background]);
+  let dts = decorationCache.get(sig);
+  if (dts) return dts;
+
+  dts = dark.map((darkColor, i) => {
     const lightColor = light[i % light.length];
     /** @type {vscode.DecorationRenderOptions} */
     const opts = {
@@ -182,6 +214,17 @@ async function load() {
     }
     return vscode.window.createTextEditorDecorationType(opts);
   });
+  decorationCache.set(sig, dts);
+  return dts;
+}
+
+// Dispose every cached decoration palette. Disposing a decoration type also
+// removes its decorations from all editors, so this clears stale colouring.
+function disposeDecorations() {
+  for (const dts of decorationCache.values()) {
+    for (const dt of dts) dt.dispose();
+  }
+  decorationCache.clear();
 }
 
 // Append an 8-digit-hex alpha to a `#rrggbb` colour for a translucent tint.
@@ -192,8 +235,13 @@ function withAlpha(color, alphaHex) {
 
 /** @param {vscode.TextEditor | undefined} editor */
 function refresh(editor) {
-  if (!editor || !parser || !query || decorationTypes.length === 0) return;
+  if (!editor || !parser || !query) return;
   if (editor.document.languageId !== 'gotmpl') return;
+
+  // Palette resolved per-document so per-folder colour settings apply in
+  // multi-root workspaces.
+  const decorationTypes = paletteFor(editor.document.uri);
+  if (decorationTypes.length === 0) return;
 
   const tree = parser.parse(editor.document.getText());
   try {
@@ -210,8 +258,7 @@ function refresh(editor) {
 }
 
 function deactivate() {
-  for (const dt of decorationTypes) dt.dispose();
-  decorationTypes = [];
+  disposeDecorations();
 }
 
 module.exports = { activate, deactivate };
